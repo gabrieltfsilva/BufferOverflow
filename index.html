@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buffer Overflow Pattern Generator</title>
+    <style>
+        body {
+            background-color: #F1F1F1;
+            color: #252525;
+        }
+        div {
+            padding: 10px;
+        }
+        input {
+            margin-left: 5px;
+            margin-right: 5px;
+        }
+        textarea {
+            width: 100%;
+            resize: none;
+        }
+        button {
+            background-color: #252525;
+            border: none;
+            color: #F1F1F1;
+            min-height: 25px;
+            min-width: 100px;
+            font-size: 15px;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #454545;
+        }
+        button:active {
+            background-color: #252525;
+        }
+    </style>  
+</head>
+<body>
+    <h1>Buffer Overflow Pattern Generator</h1>
+    <div>
+        <label>Length:</label>
+        <input type="text" id="edtLength" name="edtLength" placeholder="200">
+        <button type="button" id="btnGenerate" name="btnGenerate" onclick="document.getElementById('txtResult').value = generatePattern()">
+            Generate
+        </button>
+    </div>
+    <div>
+        <textarea name="txtResult" id="txtResult" cols="30" rows="10" readonly></textarea>
+    </div>
+    <div>
+        <label>Register value:</label>
+        <input type="text" id="edtRegister" name="edtRegister" placeholder="0x????????">
+        <button type="button" id="btnOffset" name="btnOffset" onclick="document.getElementById('lblOffset').innerHTML = 'Offset: ' + calculateOffset()">
+            Calculate
+        </button>
+    </div>
+    <div>
+        <label id="lblOffset" name = "lblOffset">Offset:</label>
+    </div>
+
+    <script type="text/javascript">
+        function generatePattern() {
+            const INIT_1 = 0x41;
+            const INIT_2 = 0x61;
+            const INIT_3 = 0x30;
+            const NUM_NUMBERS = 10;
+            const MAX_LETTERS = 26;
+            const NUM_CHAR = 3;
+            const OFFSET_COUNTER = 1;
+
+            var inputLength = parseInt(document.getElementById("edtLength").value);
+
+            if (Number.isInteger(inputLength) && inputLength <= (MAX_LETTERS * MAX_LETTERS * NUM_NUMBERS)) {
+                var chr1 = INIT_1;
+                var chr2 = INIT_2;
+                var chr3 = INIT_3;
+                var strResult = "";
+                var counter = 0;
+
+                for (var i = 1; i <= inputLength; i++) {
+                    
+                    if ((i % NUM_CHAR) == 0) {
+                        strResult += String.fromCharCode(chr3);
+                    } else if (i == (OFFSET_COUNTER + NUM_CHAR * counter)) {
+                        strResult += String.fromCharCode(chr1);
+                        counter++;
+                    } else {
+                        strResult += String.fromCharCode(chr2);
+                    }
+
+                    if ((i % (NUM_CHAR * NUM_NUMBERS * MAX_LETTERS)) == 0) {
+                        chr3 = INIT_3;
+                        chr2 = INIT_2;
+                        chr1++;
+                    } else if ((i % (NUM_CHAR * NUM_NUMBERS)) == 0) {
+                        chr3 = INIT_3;
+                        chr2++;
+                    } else if ((i % NUM_CHAR) == 0) {
+                        chr3++;
+                    }
+                }
+
+                return strResult;
+            } else {
+                return "Invalid Input";
+            }
+        }
+
+        function calculateOffset() {
+            var text = document.getElementById("txtResult").value;
+            var txtRegister = document.getElementById("edtRegister").value;
+            var regexp = /^[0-9a-fA-F]+$/;
+            var result;
+
+            if (txtRegister.toLowerCase().indexOf("0x") == 0) {
+                txtRegister = txtRegister.toLowerCase().replace("0x", "");
+            }
+
+            if (!(regexp.test(txtRegister) && txtRegister.length == 8)) {
+                return "invalid format. Try 0x????????.";
+            }
+
+            result = text.indexOf(asciiToHex(txtRegister));
+
+            if (result >= 0) {
+                return result.toString();
+            } else {
+                return "not found."
+            }
+        }
+
+        function asciiToHex(value) {
+            var strResult = "";
+
+            for (var i = 0; i < 8; i += 2) {
+                strResult += String.fromCharCode(parseInt(value.substr(i, 2), 16));
+            }
+
+            return strResult;
+        }
+    </script>
+</body>
+</html>
